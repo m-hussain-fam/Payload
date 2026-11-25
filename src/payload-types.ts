@@ -69,6 +69,17 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    roles: Role;
+    regions: Region;
+    sports: Sport;
+    series: Series;
+    teams: Team;
+    players: Player;
+    tags: Tag;
+    categories: Category;
+    articles: Article;
+    advertisements: Advertisement;
+    navbars: Navbar;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,13 +89,24 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    roles: RolesSelect<false> | RolesSelect<true>;
+    regions: RegionsSelect<false> | RegionsSelect<true>;
+    sports: SportsSelect<false> | SportsSelect<true>;
+    series: SeriesSelect<false> | SeriesSelect<true>;
+    teams: TeamsSelect<false> | TeamsSelect<true>;
+    players: PlayersSelect<false> | PlayersSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    articles: ArticlesSelect<false> | ArticlesSelect<true>;
+    advertisements: AdvertisementsSelect<false> | AdvertisementsSelect<true>;
+    navbars: NavbarsSelect<false> | NavbarsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {};
@@ -122,7 +144,39 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
+  name: string;
+  /**
+   * Old CMS user_name — unique login/identity handle
+   */
+  username: string;
+  role: number | Role;
+  /**
+   * Public URL slug, e.g. ali-khan
+   */
+  slug?: string | null;
+  bio?: string | null;
+  designation?: string | null;
+  social?: {
+    instagramUsername?: string | null;
+    instagramUrl?: string | null;
+    facebookUsername?: string | null;
+    facebookUrl?: string | null;
+    twitterUsername?: string | null;
+    twitterUrl?: string | null;
+  };
+  /**
+   * Migrated: Media filename = static-assets/... on existing S3. New uploads go to connected storage.
+   */
+  avatar?: (number | null) | Media;
+  /**
+   * Old CMS labwis_user.user_id — migration mapping
+   */
+  legacyUserId?: number | null;
+  /**
+   * Uncheck to block or deactivate this user
+   */
+  isActive?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -144,11 +198,24 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Manage system and website user roles
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: number;
+  name: string;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
+  id: number;
   alt: string;
   updatedAt: string;
   createdAt: string;
@@ -163,11 +230,362 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * Site regions (Global, India, UK, Rest of Asia, …)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "regions".
+ */
+export interface Region {
+  id: number;
+  name: string;
+  /**
+   * e.g. india, united-kingdom, global
+   */
+  slug: string;
+  /**
+   * Short stable code for app logic, e.g. global, in, gb, rest-of-asia
+   */
+  code?: string | null;
+  /**
+   * Old CMS labwis_entity_master.entity_master_id — for migration mapping
+   */
+  legacyEntityId?: number | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Sports (Cricket now; Football etc. later)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sports".
+ */
+export interface Sport {
+  id: number;
+  name: string;
+  /**
+   * e.g. cricket, football
+   */
+  slug: string;
+  /**
+   * Short stable code for app/feed logic, e.g. cricket
+   */
+  code?: string | null;
+  /**
+   * Old CMS labwis_entity_master.entity_master_id (e.g. Cricket = 7)
+   */
+  legacyEntityId?: number | null;
+  /**
+   * Old CMS labwis_entity_group.entity_group_id
+   */
+  legacyGroupId?: number | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Competition series (IPL, County Championship, …)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "series".
+ */
+export interface Series {
+  id: number;
+  name: string;
+  /**
+   * Full legacy path, e.g. series/county-championship-2015
+   */
+  slug: string;
+  /**
+   * Legacy Wisden-group series map to Cricket
+   */
+  sport: number | Sport;
+  /**
+   * Old CMS labwis_entity_master.entity_master_id
+   */
+  legacyEntityId?: number | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Teams (national, franchise, counties, …)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams".
+ */
+export interface Team {
+  id: number;
+  name: string;
+  /**
+   * Full legacy path, e.g. team/afghanistan-1188
+   */
+  slug: string;
+  /**
+   * Legacy Wisden-group teams map to Cricket
+   */
+  sport: number | Sport;
+  /**
+   * Migrated: Media filename = static-assets/images/teams/{id}.png on existing S3.
+   */
+  image?: (number | null) | Media;
+  /**
+   * Old CMS labwis_entity_master.entity_master_id
+   */
+  legacyEntityId?: number | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Players (cricket squad / profile entities)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "players".
+ */
+export interface Player {
+  id: number;
+  name: string;
+  /**
+   * Full legacy path, e.g. players/aaron-finch-4196
+   */
+  slug: string;
+  /**
+   * Legacy Wisden-group players map to Cricket
+   */
+  sport: number | Sport;
+  /**
+   * Migrated: Media filename = static-assets/images/players/{id}.png on existing S3.
+   */
+  image?: (number | null) | Media;
+  /**
+   * Old CMS labwis_entity_master.entity_master_id
+   */
+  legacyEntityId?: number | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Editorial topics / tags (article topics, not players)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  name: string;
+  /**
+   * Full legacy path, e.g. topic/abu-dhabi-t10-2022
+   */
+  slug: string;
+  /**
+   * Legacy Wisden-group tags map to Cricket
+   */
+  sport: number | Sport;
+  /**
+   * Old CMS labwis_entity_master.entity_master_id
+   */
+  legacyEntityId?: number | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Content categories (News, Features, Videos, …)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  name: string;
+  /**
+   * Full legacy path, e.g. cricket-news, cricket-features
+   */
+  slug: string;
+  /**
+   * Legacy Wisden-group categories map to Cricket
+   */
+  sport: number | Sport;
+  /**
+   * Old CMS labwis_entity_master.entity_master_id
+   */
+  legacyEntityId?: number | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * News / features articles
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles".
+ */
+export interface Article {
+  id: number;
+  title: string;
+  /**
+   * Legacy title_alias, e.g. james-rew-is-ready-for-test-cricket-...
+   */
+  slug: string;
+  /**
+   * Legacy intro_text / listing short_desc
+   */
+  excerpt?: string | null;
+  /**
+   * New articles — Lexical rich text. Frontend prefers this when set.
+   */
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Migrated full_text (HTML + iframes + shortcodes). Preview by default; Edit HTML to change.
+   */
+  bodyHtml?: string | null;
+  coverImage?: (number | null) | Media;
+  author?: (number | null) | User;
+  /**
+   * Default Cricket for Wisden-migrated articles
+   */
+  sport?: (number | null) | Sport;
+  categories?: (number | Category)[] | null;
+  tags?: (number | Tag)[] | null;
+  players?: (number | Player)[] | null;
+  teams?: (number | Team)[] | null;
+  series?: (number | Series)[] | null;
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    keywords?: string | null;
+    canonicalUrl?: string | null;
+    /**
+     * Raw custom meta tags / snippets from legacy seo.custom_meta
+     */
+    customMeta?: string | null;
+  };
+  facebook?: {
+    title?: string | null;
+    description?: string | null;
+    image?: (number | null) | Media;
+  };
+  twitter?: {
+    card?: ('summary' | 'summary_large_image') | null;
+    title?: string | null;
+    description?: string | null;
+    image?: (number | null) | Media;
+  };
+  seoAdvanced?: {
+    /**
+     * e.g. index,follow — legacy seo.meta_robots
+     */
+    robots?: string | null;
+  };
+  status?: ('draft' | 'published') | null;
+  publishedAt?: string | null;
+  /**
+   * Old CMS labwis_article.article_id
+   */
+  legacyArticleId?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Ad creatives + a few legacy static HTML pages (flagged by kind)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "advertisements".
+ */
+export interface Advertisement {
+  id: number;
+  title: string;
+  /**
+   * staticPage = Terms / Privacy / Contact etc. stored as ads in legacy; move to Pages later if needed
+   */
+  kind: 'ad' | 'staticPage';
+  /**
+   * Legacy ad_code — HTML/JS snippet rendered on the site
+   */
+  code?: string | null;
+  /**
+   * Legacy ad_client: 1=Desktop, 2=Mobile, 3=App
+   */
+  clients?: ('desktop' | 'mobile' | 'app')[] | null;
+  isActive?: boolean | null;
+  /**
+   * Old CMS labwis_advertisement.ad_id
+   */
+  legacyAdId?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * One header nav per region. Open a region doc to edit that menu (label + URL, parent → child only).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navbars".
+ */
+export interface Navbar {
+  id: number;
+  /**
+   * e.g. Header — Global, Header — India
+   */
+  title: string;
+  /**
+   * One navbar document per region — pick region, edit only that tree
+   */
+  region: number | Region;
+  /**
+   * Top-level links; add Children for a one-level dropdown
+   */
+  items?:
+    | {
+        label: string;
+        /**
+         * Optional. Leave empty for a dropdown-only label (no link). Path or full URL otherwise.
+         */
+        url?: string | null;
+        openInNewTab?: boolean | null;
+        /**
+         * Optional dropdown links (1 level only). Parent can have no URL.
+         */
+        children?:
+          | {
+              label: string;
+              /**
+               * Path or full URL, e.g. /series/ipl-2024
+               */
+              url: string;
+              openInNewTab?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string;
+  id: number;
   key: string;
   data:
     | {
@@ -184,20 +602,64 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'roles';
+        value: number | Role;
+      } | null)
+    | ({
+        relationTo: 'regions';
+        value: number | Region;
+      } | null)
+    | ({
+        relationTo: 'sports';
+        value: number | Sport;
+      } | null)
+    | ({
+        relationTo: 'series';
+        value: number | Series;
+      } | null)
+    | ({
+        relationTo: 'teams';
+        value: number | Team;
+      } | null)
+    | ({
+        relationTo: 'players';
+        value: number | Player;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'articles';
+        value: number | Article;
+      } | null)
+    | ({
+        relationTo: 'advertisements';
+        value: number | Advertisement;
+      } | null)
+    | ({
+        relationTo: 'navbars';
+        value: number | Navbar;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -207,10 +669,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -230,7 +692,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -241,6 +703,25 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  username?: T;
+  role?: T;
+  slug?: T;
+  bio?: T;
+  designation?: T;
+  social?:
+    | T
+    | {
+        instagramUsername?: T;
+        instagramUrl?: T;
+        facebookUsername?: T;
+        facebookUrl?: T;
+        twitterUsername?: T;
+        twitterUrl?: T;
+      };
+  avatar?: T;
+  legacyUserId?: T;
+  isActive?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -276,6 +757,205 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles_select".
+ */
+export interface RolesSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "regions_select".
+ */
+export interface RegionsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  code?: T;
+  legacyEntityId?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sports_select".
+ */
+export interface SportsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  code?: T;
+  legacyEntityId?: T;
+  legacyGroupId?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "series_select".
+ */
+export interface SeriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  sport?: T;
+  legacyEntityId?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams_select".
+ */
+export interface TeamsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  sport?: T;
+  image?: T;
+  legacyEntityId?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "players_select".
+ */
+export interface PlayersSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  sport?: T;
+  image?: T;
+  legacyEntityId?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  sport?: T;
+  legacyEntityId?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  sport?: T;
+  legacyEntityId?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles_select".
+ */
+export interface ArticlesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  excerpt?: T;
+  body?: T;
+  bodyHtml?: T;
+  coverImage?: T;
+  author?: T;
+  sport?: T;
+  categories?: T;
+  tags?: T;
+  players?: T;
+  teams?: T;
+  series?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        keywords?: T;
+        canonicalUrl?: T;
+        customMeta?: T;
+      };
+  facebook?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  twitter?:
+    | T
+    | {
+        card?: T;
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  seoAdvanced?:
+    | T
+    | {
+        robots?: T;
+      };
+  status?: T;
+  publishedAt?: T;
+  legacyArticleId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "advertisements_select".
+ */
+export interface AdvertisementsSelect<T extends boolean = true> {
+  title?: T;
+  kind?: T;
+  code?: T;
+  clients?: T;
+  isActive?: T;
+  legacyAdId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navbars_select".
+ */
+export interface NavbarsSelect<T extends boolean = true> {
+  title?: T;
+  region?: T;
+  items?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        openInNewTab?: T;
+        children?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              openInNewTab?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -1,0 +1,20 @@
+# Seed / migrate order (Payload cricket-cms)
+# Run in this sequence so relationships resolve (e.g. sport → Cricket).
+
+1. migrate:users     → scripts/migrate-users.ts     (Users + Roles + avatar Media/CDN)
+2. seed:regions      → scripts/seed-regions.ts      (Regions)
+3. seed:sports       → scripts/seed-sports.ts       (Sports / games)
+4. seed:series       → scripts/seed-series.ts       (Series → Cricket; full slug series/...)
+5. seed:teams        → scripts/seed-teams.ts        (Teams → Cricket + logo Media/CDN; slug team/...)
+6. seed:players      → scripts/seed-players.ts      (Players → Cricket + image Media/CDN; slug players/...)
+7. seed:tags         → scripts/seed-tags.ts         (Tags/topics → Cricket; slug topic/...)
+8. seed:categories   → scripts/seed-categories.ts   (Categories → Cricket; slug e.g. cricket-news)
+
+# Next (not done yet):
+# 9. Venues (optional)
+# 10. Matches (large / later)
+11. migrate:articles → scripts/migrate-articles.ts (Articles; bodyHtml + relations; Language skipped)
+    # optional: pnpm migrate:articles -- --limit=100
+12. seed:advertisements → scripts/seed-advertisements.ts (Ads + staticPage kind; no Ad Positions)
+13. seed:navbars → scripts/seed-navbars.ts (Global Header dummy; top URL optional for dropdown-only)
+
